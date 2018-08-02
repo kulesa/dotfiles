@@ -22,13 +22,18 @@ set incsearch   "find the next match as we type the search
 set hlsearch    "hilight searches by default
 set ignorecase smartcase
 
+set number      "add line numbers
 set showbreak=...
 "set wrap linebreak nolist
 set nowrap
 
+set ffs=unix
+
 set autoread
 
-let mapleader = ","
+let mapleader = " "
+nnoremap <Leader>w :w<CR>
+nnoremap <leader>( csW,
 highlight Search guifg=yellow gui=underline
 
 "mapping for command key to map navigation thru display lines instead
@@ -138,6 +143,10 @@ filetype indent on
 "turn on syntax highlighting
 syntax on
 au BufRead,BufNewFile *.hamlc set filetype=haml
+au BufRead,BufNewFile *.eco set filetype=html
+au BufRead,BufNewFile *.cljs set filetype=clojure
+
+au BufNewFile,BufRead *.vtl set ft=velocity
 
 "some stuff to get the mouse going in term
 set mouse=a
@@ -151,15 +160,9 @@ set nowritebackup
 set noswapfile
 
 set t_Co=256
-"set background=dark
-"colorscheme solarized
+set background=dark
+colorscheme grb
 set guitablabel=%M%t
-
-"if has("gui_mac") || has("gui_macvim")
-    "let g:Powerline_symbols = 'fancy'
-    "set guifont=Mensch\ for\ Powerline:h14
-    "set invmmta
-"endif
 
 " vim-airline settings
 let g:airline_powerline_fonts=1
@@ -238,8 +241,6 @@ vmap <D-[> <gv
 vmap <D-]> >gv
 
 let ScreenShot = {'Icon':0, 'Credits':0, 'force_background':'#FFFFFF'}
-let g:ctrlp_match_window_reversed = 1
-
 
 augroup vimrcEx
   " Clear all autocmds in the group
@@ -260,7 +261,6 @@ augroup END
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 cnoremap %% <C-R>=expand('%:h').'/'<cr>
 map <leader>e :edit %%
-map <leader>w :view %%
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " RENAME CURRENT FILE
@@ -275,17 +275,6 @@ function! RenameFile()
     endif
 endfunction
 map <leader>n :call RenameFile()<cr>
-
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" PROMOTE VARIABLE TO RSPEC LET
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-function! PromoteToLet()
-  :.s/\(\w\+\) = \(.*\)$/let(:\1) { \2 }/
-  :normal ==
-endfunction
-:command! PromoteToLet :call PromoteToLet()
-:map <leader>p :PromoteToLet<cr>
-
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " MAPS TO JUMP TO SPECIFIC COMMAND-T TARGETS AND FILES
@@ -393,6 +382,7 @@ map <leader>z :call RunNearestTest()<cr>
 map <leader>G :call RunTests('')<cr>
 
 map <leader>Z :w\|:!ruby %<cr>
+map <leader>i :w\|:!mix test %<cr>
 
 let $XIKI_DIR = "/Users/pro/.rvm/gems/ruby-1.9.3-p194/gems/xiki-0.6.3/"
 
@@ -414,26 +404,13 @@ nmap j gj
 nmap k gk
 nmap <C-e> :e#<CR>
 nmap <C-n> :bnext<CR>
-nmap <C-p> :bprev<CR>
+nnoremap <C-p> :GFiles<CR>
+nnoremap <C-b> :Buffers<CR>
+nnoremap <leader>l :Lines<CR>
 
-nmap ; :CtrlPBuffer<CR>
-nmap <leader>k :CtrlPClearCache<CR>
 nmap <leader>f :Ag <C-R><C-W><CR>
 
 let g:gitgutter_enabled = 1
-
-"relative line number
-set rnu
-
-function! NumberToggle()
-  if(&relativenumber == 1)
-    set number
-  else
-    set relativenumber
-  endif
-endfunc
-
-nnoremap <C-i> :call NumberToggle()<cr>
 
 let g:tmux_navigator_no_mappings = 1
 nmap <silent> <c-h> :TmuxNavigateLeft<cr>
@@ -446,3 +423,78 @@ map <leader>c :PBCopy<cr>
 map <leader>v :PBPaste<cr>
 
 map <leader>t :NERDTreeToggle<CR>
+
+set clipboard=unnamed
+
+
+" Dash binding
+nmap <silent> <leader>d <Plug>DashSearch
+let g:dash_map = {
+        \ 'ruby'       : 'rails ruby',
+        \ 'javascript' : 'jquery backbone javascript ',
+        \ 'coffee' : 'jquery backbone coffee javascript',
+        \ 'css' : 'bootstrap sass css',
+        \ 'scss' : 'bootstrap sass css'
+        \ }
+
+
+" Easymotion
+map  / <Plug>(easymotion-sn)
+omap / <Plug>(easymotion-tn)
+nmap t <Plug>(easymotion-t2)
+
+let g:jsx_ext_required = 0
+let g:syntastic_javascript_checkers = ['eslint']
+let g:syntastic_check_on_open = 0
+let g:syntastic_check_on_wq = 0
+set statusline+=%#warningmsg#
+set statusline+=%{SyntasticStatuslineFlag()}
+set statusline+=%*
+let g:syntastic_mode_map = {
+    \ "mode": "active",
+    \ "passive_filetypes": ["haml", "scss", "sass"] }
+
+let g:flow#autoclose = 1
+
+function! RestoreRegister()
+  let @" = s:restore_reg
+  return ''
+endfunction
+function! s:Repl()
+  let s:restore_reg = @"
+  return "p@=RestoreRegister()\<cr>"
+endfunction
+vmap <silent> <expr> p <sid>Repl()
+
+" prettier
+" "autocmd FileType javascript set formatprg=prettier\ --stdin
+let g:prettier#autoformat = 0
+autocmd BufWritePre *.js,*.jsx,*.mjs,*.ts,*.tsx,*.css,*.less,*.scss,*.json,*.graphql,*.md PrettierAsync
+let g:prettier#config#tab_width = 2
+let g:prettier#config#semi = 'false'
+let g:prettier#config#single_quote = 'true'
+let g:prettier#config#trailing_comma = 'es5'
+let g:prettier#config#parser = 'flow'
+let g:prettier#config#eslintIntegration = 'true'
+
+call plug#begin('~/.vim/plugged')
+Plug 'scrooloose/nerdtree', { 'on':  'NERDTreeToggle' }
+
+Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
+Plug 'junegunn/fzf.vim'
+call plug#end()
+
+" Mapping selecting mappings
+nmap <leader><tab> <plug>(fzf-maps-n)
+xmap <leader><tab> <plug>(fzf-maps-x)
+omap <leader><tab> <plug>(fzf-maps-o)
+
+" Insert mode completion
+imap <c-x><c-k> <plug>(fzf-complete-word)
+imap <c-x><c-f> <plug>(fzf-complete-path)
+imap <c-x><c-j> <plug>(fzf-complete-file-ag)
+imap <c-x><c-l> <plug>(fzf-complete-line)
+
+" Advanced customization using autoload functions
+inoremap <expr> <c-x><c-k> fzf#vim#complete#word({'left': '15%'}})"
+set noerrorbells
