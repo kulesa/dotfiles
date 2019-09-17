@@ -160,22 +160,35 @@ set nowritebackup
 set noswapfile
 
 set t_Co=256
-set background=dark
-colorscheme grb
+set background=light
+colorscheme PaperColor
+""set background=dark
+""colorscheme apprentice
 set guitablabel=%M%t
+set termguicolors
 
 " vim-airline settings
 let g:airline_powerline_fonts=1
+let g:lightline = { 'colorscheme': 'PaperColor' }
 set ttimeoutlen=50
 
+" don't give |ins-completion-menu| messages.
+set shortmess+=c
+
+" always show signcolumns
+set signcolumn=yes
+
+function! s:check_back_space() abort
+  let col = col('.') - 1
+  return !col || getline('.')[col - 1]  =~# '\s'
+endfunction
 nnoremap - :Switch<cr>
+
+inoremap <expr> <cr> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
 
 "make <c-l> clear the highlight as well as redraw
 nnoremap <C-L> :nohls<CR><C-L>
 inoremap <C-L> <C-O>:nohls<CR>
-
-"map to bufexplorer
-nnoremap <leader>b :BufExplorer<cr>
 
 "map Q to something useful
 noremap Q gq
@@ -229,10 +242,6 @@ endfunction
 
 "key mapping for saving file
 nmap <C-s> :w<CR>
-
-"key mapping for tab navigation
-nmap <Tab> gt
-nmap <S-Tab> gT
 
 "Key mapping for textmate-like indentation
 nmap <D-[> <<
@@ -387,12 +396,6 @@ map <leader>i :w\|:!mix test %<cr>
 let $XIKI_DIR = "/Users/pro/.rvm/gems/ruby-1.9.3-p194/gems/xiki-0.6.3/"
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Splitjoin
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-nmap <Leader>j :SplitjoinJoin<cr>
-nmap <Leader>s :SplitjoinSplit<cr>
-
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Tabularize
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 map <Leader>q :Tabularize /
@@ -409,6 +412,7 @@ nnoremap <C-b> :Buffers<CR>
 nnoremap <leader>l :Lines<CR>
 
 nmap <leader>f :Ag <C-R><C-W><CR>
+nmap <leader>d :DockerToolsToggle<CR>
 
 let g:gitgutter_enabled = 1
 
@@ -424,19 +428,10 @@ map <leader>v :PBPaste<cr>
 
 map <leader>t :NERDTreeToggle<CR>
 
-set clipboard=unnamed
-
-
-" Dash binding
-nmap <silent> <leader>d <Plug>DashSearch
-let g:dash_map = {
-        \ 'ruby'       : 'rails ruby',
-        \ 'javascript' : 'jquery backbone javascript ',
-        \ 'coffee' : 'jquery backbone coffee javascript',
-        \ 'css' : 'bootstrap sass css',
-        \ 'scss' : 'bootstrap sass css'
-        \ }
-
+" Ubuntu:
+" set clipboard=unnamedplus
+" Mac:
+set clipboard+=unnamed
 
 " Easymotion
 map  / <Plug>(easymotion-sn)
@@ -444,9 +439,12 @@ omap / <Plug>(easymotion-tn)
 nmap t <Plug>(easymotion-t2)
 
 let g:jsx_ext_required = 0
-let g:syntastic_javascript_checkers = ['eslint']
+let g:syntastic_always_populate_loc_list = 1
+let g:syntastic_auto_loc_list = 1
 let g:syntastic_check_on_open = 0
 let g:syntastic_check_on_wq = 0
+let g:syntastic_javascript_checkers = ['eslint']
+let g:syntastic_javascript_eslint_exe = '$(npm bin)/eslint'
 set statusline+=%#warningmsg#
 set statusline+=%{SyntasticStatuslineFlag()}
 set statusline+=%*
@@ -466,15 +464,16 @@ function! s:Repl()
 endfunction
 vmap <silent> <expr> p <sid>Repl()
 
+augroup FiletypeGroup
+    autocmd!
+    " .ts is a Typescript file
+    au BufNewFile,BufRead *.ts set filetype=typescript
+augroup END
 " prettier
 " "autocmd FileType javascript set formatprg=prettier\ --stdin
-let g:prettier#autoformat = 0
+let g:prettier#autoformat = 1
 autocmd BufWritePre *.js,*.jsx,*.mjs,*.ts,*.tsx,*.css,*.less,*.scss,*.json,*.graphql,*.md PrettierAsync
 let g:prettier#config#tab_width = 2
-let g:prettier#config#semi = 'false'
-let g:prettier#config#single_quote = 'true'
-let g:prettier#config#trailing_comma = 'es5'
-let g:prettier#config#parser = 'flow'
 let g:prettier#config#eslintIntegration = 'true'
 
 call plug#begin('~/.vim/plugged')
@@ -482,6 +481,10 @@ Plug 'scrooloose/nerdtree', { 'on':  'NERDTreeToggle' }
 
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
+Plug 'kevinhui/vim-docker-tools'
+Plug 'mhinz/vim-mix-format'
+Plug 'morhetz/gruvbox'
+Plug 'dracula/vim', { 'as': 'dracula' }
 call plug#end()
 
 " Mapping selecting mappings
@@ -498,3 +501,35 @@ imap <c-x><c-l> <plug>(fzf-complete-line)
 " Advanced customization using autoload functions
 inoremap <expr> <c-x><c-k> fzf#vim#complete#word({'left': '15%'}})"
 set noerrorbells
+
+set path=.,src
+set suffixesadd=.js,.jsx,.tsx,.ts,.less,.css
+
+function! LoadMainNodeModule(fname)
+    let nodeModules = "./node_modules/"
+    let packageJsonPath = nodeModules . a:fname . "/package.json"
+
+    if filereadable(packageJsonPath)
+        return nodeModules . a:fname . "/" . json_decode(join(readfile(packageJsonPath))).main
+    else
+        return nodeModules . a:fname
+    endif
+endfunction
+
+set includeexpr=LoadMainNodeModule(v:fname)
+
+let g:deoplete#enable_at_startup = 1
+
+let b:ale_linters = ['eslint']
+
+" deoplete tab mapping
+function! s:check_back_space() abort "{{{
+  let col = col('.') - 1
+  return !col || getline('.')[col - 1]  =~ '\s'
+endfunction"}}}
+inoremap <silent><expr> <TAB>
+      \ pumvisible() ? "\<C-n>" :
+      \ <SID>check_back_space() ? "\<TAB>" :
+      \ deoplete#manual_complete()
+
+let g:mix_format_on_save = 1
