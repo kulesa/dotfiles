@@ -5,7 +5,7 @@ set -o vi
 
 # Set to the name theme to load.
 # Look in ~/.oh-my-zsh/themes/
-export ZSH_THEME="edvardm"
+export ZSH_THEME="apple"
 
 # Set to this to use case-sensitive completion
 # export CASE_SENSITIVE="true"
@@ -74,3 +74,13 @@ bindkey "^R" history-incremental-search-backward
 # Ruby GC tuning
 export RUBY_GC_MALLOC_LIMIT=60000000
 export RUBY_FREE_MIN=200000
+alias phe="iex -S mix phx.server"
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+function emacs()
+{
+  emacsclient -t $*
+}
