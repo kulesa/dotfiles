@@ -16,7 +16,7 @@ export ZSH_THEME="apple"
 # Uncomment following line if you want to disable colors in ls
 # export DISABLE_LS_COLORS="true"
 
-plugins=(cap git lein vagrant)
+plugins=(cap git lein vagrant zsh-autosuggestions)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -84,3 +84,9 @@ function emacs()
 {
   emacsclient -t $*
 }
+
+export FZF_DEFAULT_COMMAND="fd --type file --color=always"
+export FZF_DEFAULT_OPTS="--ansi"
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+
+test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
