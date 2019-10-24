@@ -24,8 +24,13 @@ set ignorecase smartcase
 
 set number      "add line numbers
 set showbreak=...
-"set wrap linebreak nolist
+"set wrap linebreak
+set nolist
 set nowrap
+set lazyredraw
+set ttyfast
+set re=1
+set synmaxcol=200
 
 set ffs=unix
 
@@ -116,9 +121,11 @@ set expandtab
 set autoindent
 
 "folding settings
-set foldmethod=indent   "fold based on indent
+"set foldmethod=indent   "fold based on indent
+set foldmethod=manual
 set foldnestmax=3       "deepest fold is 3 levels
 set nofoldenable        "dont fold by default
+set foldlevel=0
 
 set wildmode=list:longest   "make cmdline tab completion similar to bash
 set wildmenu                "enable ctrl-n and ctrl-p to scroll thru matches
@@ -160,16 +167,12 @@ set nowritebackup
 set noswapfile
 
 set t_Co=256
-set background=light
-colorscheme PaperColor
-""set background=dark
-""colorscheme apprentice
 set guitablabel=%M%t
 set termguicolors
 
 " vim-airline settings
 let g:airline_powerline_fonts=1
-let g:lightline = { 'colorscheme': 'PaperColor' }
+let g:lightline = { 'colorscheme': 'scheakur' }
 set ttimeoutlen=50
 
 " don't give |ins-completion-menu| messages.
@@ -407,7 +410,7 @@ nmap j gj
 nmap k gk
 nmap <C-e> :e#<CR>
 nmap <C-n> :bnext<CR>
-nnoremap <C-p> :GFiles<CR>
+nnoremap <C-p> :GitFiles<CR>
 nnoremap <C-b> :Buffers<CR>
 nnoremap <leader>l :Lines<CR>
 
@@ -483,8 +486,6 @@ Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
 Plug 'kevinhui/vim-docker-tools'
 Plug 'mhinz/vim-mix-format'
-Plug 'morhetz/gruvbox'
-Plug 'dracula/vim', { 'as': 'dracula' }
 call plug#end()
 
 " Mapping selecting mappings
@@ -533,3 +534,21 @@ inoremap <silent><expr> <TAB>
       \ deoplete#manual_complete()
 
 let g:mix_format_on_save = 1
+
+" Initially set it to "dark" or "light" according to your default
+let s:mybg = "dark"
+set background=light
+colorscheme PaperColor
+function! BgToggleSol()
+    if (s:mybg ==? "light")
+      source ~/.vim/vimrc.night
+       "set background=dark
+       "let s:mybg = "dark"
+    else
+      source ~/.vim/vimrc.day
+       "set background=light
+       "let s:mybg = "light"
+    endif
+endfunction
+
+nnoremap <silent> <leader>b :call BgToggleSol()<cr>
