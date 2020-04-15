@@ -58,6 +58,7 @@ values."
      syntax-checking
      ;; version-control
      yaml
+     vterm
      )
    ;; List of additional packages that will be installed without being
    ;; wrapped in a layer. If you need some configuration for these
@@ -65,6 +66,7 @@ values."
    ;; configuration in `dotspacemacs/user-config'.
    dotspacemacs-additional-packages '(
                                       ob-http
+                                      frames-only-mode
                                       inf-clojure
                                       prettier-js
                                       graphql-mode
@@ -140,7 +142,7 @@ values."
    ;; True if the home buffer should respond to resize events.
    dotspacemacs-startup-buffer-responsive t
    ;; Default major mode of the scratch buffer (default `text-mode')
-   dotspacemacs-scratch-mode 'json-mode
+   dotspacemacs-scratch-mode 'org-mode
    ;; List of themes, the first of the list is loaded when spacemacs starts.
    ;; Press <SPC> T n to cycle to the next theme in the list (works great
    ;; with 2 themes variants, one dark and one light)
@@ -151,7 +153,7 @@ values."
    ;; Default font, or prioritized list of fonts. `powerline-scale' allows to
    ;; quickly tweak the mode-line size to make separators look not too crappy.
    dotspacemacs-default-font '("Fira Code"
-                               :size 18
+                               :size 24
                                :weight normal
                                :width condensed
                                :powerline-scale 1.0)
@@ -193,7 +195,7 @@ values."
    dotspacemacs-default-layout-name "Default"
    ;; If non nil the default layout name is displayed in the mode-line.
    ;; (default nil)
-   dotspacemacs-display-default-layout nil
+   dotspacemacs-display-default-layout t
    ;; If non nil then the last auto saved layouts are resume automatically upon
    ;; start. (default nil)
    dotspacemacs-auto-resume-layouts nil
@@ -241,11 +243,11 @@ values."
    dotspacemacs-fullscreen-at-startup nil
    ;; If non nil `spacemacs/toggle-fullscreen' will not use native fullscreen.
    ;; Use to disable fullscreen animations in OSX. (default nil)
-   dotspacemacs-fullscreen-use-non-native nil
+   dotspacemacs-fullscreen-use-non-native t
    ;; If non nil the frame is maximized when Emacs starts up.
    ;; Takes effect only if `dotspacemacs-fullscreen-at-startup' is nil.
    ;; (default nil) (Emacs 24.4+ only)
-   dotspacemacs-maximized-at-startup t
+   dotspacemacs-maximized-at-startup nil
    ;; A value from the range (0..100), in increasing opacity, which describes
    ;; the transparency level of a frame when it's active or selected.
    ;; Transparency can be toggled through `toggle-transparency'. (default 90)
@@ -294,7 +296,7 @@ values."
    dotspacemacs-highlight-delimiters 'all
    ;; If non nil, advise quit functions to keep server open when quitting.
    ;; (default nil)
-   dotspacemacs-persistent-server nil
+   dotspacemacs-persistent-server t
    ;; List of search tool executable names. Spacemacs uses the first installed
    ;; tool of the list. Supported tools are `ag', `pt', `ack' and `grep'.
    ;; (default '("ag" "pt" "ack" "grep"))
@@ -338,26 +340,58 @@ before packages are loaded. If you are unsure, you should try in setting them in
 
 (defun dotspacemacs/user-config ()
   (ido-mode -1)
+
+  ;; babel config
+  (require 'ob-emacs-lisp)
   (require 'ob-clojure)
-  (require 'ob-R)
   (require 'ob-org)
+  (require 'ob-css)
   (require 'ob-js)
   (require 'ob-http)
+  (require 'ob-shell)
+  (require 'ob-ruby)
+
+  ;; fixes the gap above the frame on mac
+  (setq frame-resize-pixelwise t)
+
+  ;; encryption in emacs
+  (require 'epa-file)
+  ;;(custom-set-variables '(epg-gpg-program  "/usr/local/bin/gpg"))
+  (setq epg-gpg-program "/usr/local/bin/gpg")
+  (epa-file-enable)
+
+  (require 'org-crypt)
+  (org-crypt-use-before-save-magic)
+  (setq org-tags-exclude-from-inheritance (quote ("crypt"))) 
+  ;;  set to nil to use symmetric encryption.
+  (setq org-crypt-key nil) 
+
+  ;;(setq org-babel-sh-command 'zsh)
+  (setq org-startup-indented f)
+  (setq org-imenu-depth 3)
+  (add-to-list 'org-src-lang-modes '("dot" . graphviz-dot))
+  ;; Update images from babel code blocks automatically
+  (add-hook 'org-babel-after-execute-hook 'org-display-inline-images)
+  (setq org-src-fontify-natively t)
+  (setq org-src-tab-acts-natively t)
+  (setq org-confirm-babel-evaluate nil)
 
   (prefer-coding-system 'utf-8)
   (setq tab-always-indent t)
+  (setq initial-frame-alist '((top . 30) (left . 700) (width . 212) (height . 81)))
 
   (org-babel-do-load-languages
    'org-babel-load-languages
    '((R . t)
-     (gnuplot . t)
      (clojure . t)
      (lisp . t)
      (org . t)
      (js . t)
+     (css . t)
      (ruby . t)
      (emacs-lisp . t)
      (http . t)
+     (shell . t)
      ))
 
   (defun copy-to-clipboard ()
@@ -370,7 +404,7 @@ before packages are loaded. If you are unsure, you should try in setting them in
           )
       (if (region-active-p)
           (progn
-            (shell-command-on-region (region-beginning) (region-end) "xsel -i -b")
+            (shell-command-on-region (region-beginning) (region-end) "pbcopy")
             (message "Yanked region to clipboard!")
             (deactivate-mark))
         (message "No region active; can't yank to clipboard!"))))
@@ -383,10 +417,11 @@ before packages are loaded. If you are unsure, you should try in setting them in
           (clipboard-yank)
           (message "graphics active")
           )
-      (insert (shell-command-to-string "xsel -o -b"))))
+      (insert (shell-command-to-string "pbpaste"))))
 
   (evil-leader/set-key "o y" 'copy-to-clipboard)
   (evil-leader/set-key "o p" 'paste-from-clipboard)
+  (define-key evil-visual-state-map "y" 'copy-to-clipboard)
 
   (spacemacs/toggle-highlight-current-line-globally-off)
 
@@ -429,9 +464,10 @@ before packages are loaded. If you are unsure, you should try in setting them in
     (prettify-symbols-mode))
 
   ;;(add-hook 'prog-mode-hook 'my-set-fira-code-ligatures)
-  ;;(add-hook 'org-mode-hook 'my-set-fira-code-ligatures)
+  ;; (add-hook 'org-mode-hook 'my-set-fira-code-ligatures)
   (setq restclient-use-org t)
   (setq restclient-same-buffer-response nil)
+  (add-hook 'rjsx-mode 'prettier-js-mode)
   (add-hook 'react-mode-hook 'prettier-js-mode)
   (add-hook 'clojure-mode-hook 'inf-clojure-minor-mode)
   (add-hook 'clojurescript-mode-hook 'inf-clojure-minor-mode)
@@ -458,6 +494,7 @@ before packages are loaded. If you are unsure, you should try in setting them in
     (org-indent-mode)
     (set-face-attribute 'org-indent nil :inherit '(org-hide fixed-pitch))
 
+    
     (variable-pitch-mode 1)
 
     ;;(turn-on-olivetti-mode)
@@ -501,11 +538,7 @@ before packages are loaded. If you are unsure, you should try in setting them in
                                 ("l" "Link currently stored [inbox]"
                                  entry
                                  (file "~/Dropbox/org/inbox.org")
-                                 "* TODO %i%?\n:PROPERTIES:\n:CREATED: %U\n:END:\n\%A\n%i\n")
-                                ("m" "Meeting [inbox]"
-                                 entry
-                                 (file "~/Dropbox/org/inbox.org")
-                                 "* Meeting %<%Y-%m-%d>: %^{prompt}\n:PROPERTIES:\n:CREATED: %U\n:END:\n- [ ] %?\n\n")))
+                                 "* TODO %i%?\n:PROPERTIES:\n:CREATED: %U\n:END:\n\%A\n%i\n")))
 
   (add-hook 'org-archive-hook 'my-org-config/after-org-archive)
   (add-hook 'org-mode-hook 'my-org-config/after-org-mode-load)
@@ -517,13 +550,12 @@ before packages are loaded. If you are unsure, you should try in setting them in
   (setq org-refile-use-outline-path 'file)
   (setq org-outline-path-complete-in-steps nil)
   (setq header-line-format " ")
-  (setq org-ellipsis "  ")
+  (setq org-ellipsis "...")
   (setq org-hide-emphasis-markers t)
   (setq org-fontify-whole-heading-line t) 
   (setq org-fontify-done-headline t)
   (setq org-fontify-quote-and-verse-blocks t)
   (setq org-bullets-bullet-list '("⬢" "◆" "▲" "■"))
-  (setq org-tags-column 0)
   (let* (
          (comment      "#6272a4")
          (warning      "#ffb86c")
@@ -542,13 +574,15 @@ before packages are loaded. If you are unsure, you should try in setting them in
          (fixed-pitch-font    `(:family "Fira Mono" ))
          (fixed-pitch-font-alt `(:family "iA Writer Mono S" )))
 
+    (setq org-todo-keywords
+          '((sequence "TODO" "DOING" "WAIT" "VERIFY" "|" "DONE" "CANCELLED")))
     (setq org-todo-keyword-faces (list
                                   `("TODO"
                                     ,@fixed-pitch-font
                                     :foreground ,comment
                                     :weight bold
                                     )
-                                  `("NEXT"
+                                  `("DOING"
                                     ,@fixed-pitch-font
                                     :foreground ,warning
                                     :weight bold)
@@ -558,11 +592,7 @@ before packages are loaded. If you are unsure, you should try in setting them in
                                     :weight bold)
                                   `("VERIFY"
                                     ,@fixed-pitch-font
-                                    :foreground ,rainbow-7
-                                    :weight bold)
-                                  `("LOWPRIO"
-                                    ,@fixed-pitch-font
-                                    :foreground ,comment
+                                    :foreground ,rainbow-5
                                     :weight bold)
                                   `("DONE"
                                     ,@fixed-pitch-font
@@ -604,8 +634,8 @@ before packages are loaded. If you are unsure, you should try in setting them in
                                   :order 1)))))
             (alltodo "" ((org-agenda-overriding-header "")
                          (org-super-agenda-groups
-                          '((:name "Next to do"
-                                   :todo "NEXT"
+                          '((:name "In Progress"
+                                   :todo "DOING"
                                    :order 1)
                             (:name "Important"
                                    :tag "Important"
@@ -695,7 +725,7 @@ This function is called at the very end of Spacemacs initialization."
  '(org-super-agenda-mode t)
  '(package-selected-packages
    (quote
-    (ob-elixir helm-gtags ggtags flycheck-mix flycheck-credo counsel-gtags counsel swiper ivy alchemist elixir-mode org-super-agenda ts ht treepy graphql f s dash avy xclip ob-http flycheck yaml-mode web-mode web-beautify tagedit slim-mode scss-mode sass-mode rvm ruby-tools ruby-test-mode rubocop rspec-mode robe rbenv pug-mode projectile-rails rake minitest livid-mode skewer-mode simple-httpd less-css-mode json-mode json-snatcher json-reformat js2-refactor js2-mode js-doc helm-css-scss haml-mode feature-mode emmet-mode company-web web-completion-data company-tern dash-functional tern coffee-mode clojure-snippets clj-refactor inflections edn multiple-cursors paredit peg cider-eval-sexp-fu cider sesman queue chruby bundler inf-ruby xterm-color unfill smeargle shell-pop orgit org-projectile org-category-capture org-present org-pomodoro alert log4e gntp org-mime org-download mwim multi-term mmm-mode markdown-toc markdown-mode magit-gitflow htmlize helm-gitignore helm-company helm-c-yasnippet gnuplot gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link gh-md fuzzy flycheck-pos-tip pos-tip evil-magit magit magit-popup git-commit ghub with-editor eshell-z eshell-prompt-extras esh-help company-statistics company auto-yasnippet yasnippet ac-ispell auto-complete prettier-js inf-clojure clojure-mode graphql-mode ws-butler winum volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline powerline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el paradox spinner org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint indent-guide hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation helm-themes helm-swoop helm-projectile helm-mode-manager helm-make projectile pkg-info epl helm-flx helm-descbinds helm-ag google-translate golden-ratio flx fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-indent-plus evil-iedit-state iedit evil-exchange evil-escape evil-ediff evil-args evil-anzu anzu evil goto-chg eval-sexp-fu highlight elisp-slime-nav dumb-jump diminish define-word column-enforce-mode clean-aindent-mode bind-map bind-key auto-highlight-symbol auto-compile packed ace-link ace-jump-helm-line helm helm-core popup which-key undo-tree org-plus-contrib hydra evil-unimpaired async aggressive-indent adaptive-wrap ace-window)))
+    (frames-only-mode ob-elixir helm-gtags ggtags flycheck-mix flycheck-credo counsel-gtags counsel swiper ivy alchemist elixir-mode org-super-agenda ts ht treepy graphql f s dash avy xclip ob-http flycheck yaml-mode web-mode web-beautify tagedit slim-mode scss-mode sass-mode rvm ruby-tools ruby-test-mode rubocop rspec-mode robe rbenv pug-mode projectile-rails rake minitest livid-mode skewer-mode simple-httpd less-css-mode json-mode json-snatcher json-reformat js2-refactor js2-mode js-doc helm-css-scss haml-mode feature-mode emmet-mode company-web web-completion-data company-tern dash-functional tern coffee-mode clojure-snippets clj-refactor inflections edn multiple-cursors paredit peg cider-eval-sexp-fu cider sesman queue chruby bundler inf-ruby xterm-color unfill smeargle shell-pop orgit org-projectile org-category-capture org-present org-pomodoro alert log4e gntp org-mime org-download mwim multi-term mmm-mode markdown-toc markdown-mode magit-gitflow htmlize helm-gitignore helm-company helm-c-yasnippet gnuplot gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link gh-md fuzzy flycheck-pos-tip pos-tip evil-magit magit magit-popup git-commit ghub with-editor eshell-z eshell-prompt-extras esh-help company-statistics company auto-yasnippet yasnippet ac-ispell auto-complete prettier-js inf-clojure clojure-mode graphql-mode ws-butler winum volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline powerline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el paradox spinner org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint indent-guide hungry-delete hl-todo highlight-parentheses highlight-numbers parent-mode highlight-indentation helm-themes helm-swoop helm-projectile helm-mode-manager helm-make projectile pkg-info epl helm-flx helm-descbinds helm-ag google-translate golden-ratio flx fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state smartparens evil-indent-plus evil-iedit-state iedit evil-exchange evil-escape evil-ediff evil-args evil-anzu anzu evil goto-chg eval-sexp-fu highlight elisp-slime-nav dumb-jump diminish define-word column-enforce-mode clean-aindent-mode bind-map bind-key auto-highlight-symbol auto-compile packed ace-link ace-jump-helm-line helm helm-core popup which-key undo-tree org-plus-contrib hydra evil-unimpaired async aggressive-indent adaptive-wrap ace-window)))
  '(safe-local-variable-values (quote ((org-confirm-babel-evaluate))))
  '(standard-indent 2)
  '(tool-bar-mode nil))
