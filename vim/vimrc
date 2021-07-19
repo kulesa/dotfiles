@@ -1,6 +1,6 @@
 "necessary on some Linux distros for pathogen to properly load bundles
 filetype off
-
+set encoding=UTF-8
 "load pathogen managed plugins
 call pathogen#runtime_append_all_bundles()
 
@@ -11,7 +11,9 @@ set nocompatible
 "allow backspacing over everything in insert mode
 set backspace=indent,eol,start
 
+let mapleader=" "
 
+set shell=/bin/bash
 "store lots of :cmdline history
 set history=1000
 
@@ -21,6 +23,12 @@ set showmode    "show current mode down the bottom
 set incsearch   "find the next match as we type the search
 set hlsearch    "hilight searches by default
 set ignorecase smartcase
+set laststatus=2
+
+set hidden
+set nobackup
+set nowritebackup
+set noswapfile
 
 set number      "add line numbers
 set showbreak=...
@@ -36,39 +44,34 @@ set ffs=unix
 
 set autoread
 
-let mapleader = " "
-nnoremap <Leader>w :w<CR>
-nnoremap <leader>( csW,
-highlight Search guifg=yellow gui=underline
+nmap j gj
+nmap k gk
+nmap <C-e> :e#<CR>
+nmap <C-n> :bnext<CR>
 
-"mapping for command key to map navigation thru display lines instead
-"of just numbered lines
-vmap <D-j> gj
-vmap <D-k> gk
-vmap <D-4> g$
-vmap <D-6> g^
-vmap <D-0> g^
-nmap <D-j> gj
-nmap <D-k> gk
-nmap <D-4> g$
-nmap <D-6> g^
-nmap <D-0> g^
+" Yank till the end of line
+nnoremap Y y$
+" Paste to line below
+nmap P :pu!<CR>
 
-"add some line space for easy reading
-set linespace=4
+"Telescope mappings
+nmap <c-p> :Telescope find_files<cr>
+nmap <c-b> :Telescope buffers<cr>
+nmap <c-t> :Telescope colorscheme<cr>
+nmap <C-\> :Telescope treesitter<cr>
+nnoremap <leader>fg <cmd>Telescope git_files<cr>
+nnoremap <leader>fl <cmd>Telescope live_grep<cr>
+nnoremap <leader>fh <cmd>Telescope help_tags<cr>
 
-"disable visual bell
-set visualbell t_vb=
+nnoremap <leader>g <cmd>Telescope git_commits<CR>
+nnoremap <leader>c <cmd>Telescope git_bcommits<CR>
+nmap <leader>ff :Telescope grep_string<CR>
+nnoremap <leader>b :Twiggy<CR>
 
-"try to make possible to navigate within lines of wrapped lines
-nmap <Down> gj
-nmap <Up> gk
-set fo=l
+set completeopt=menuone,noselect
 
-set laststatus=2
-
-"turn off needless toolbar on gvim/mvim
-set guioptions-=T
+set wildmode=list:longest,list:full
+set wildignore+=*.o,*.obj,.git,*.rbc,*.pyc,__pycache__
 
 "remove trailing whitespace before save
 function! StripTrailingWhite()
@@ -82,337 +85,8 @@ endfun
 
 autocmd BufWritePre *.{rb,coffee,js,haml,erb,python} call StripTrailingWhite()
 
-"return a list containing the lengths of the long lines in this buffer
-function! s:LongLines()
-    let threshold = (&tw ? &tw : 80)
-    let spaces = repeat(" ", &ts)
+" search word under cursor
 
-    let long_line_lens = []
-
-    let i = 1
-    while i <= line("$")
-        let len = strlen(substitute(getline(i), '\t', spaces, 'g'))
-        if len > threshold
-            call add(long_line_lens, len)
-        endif
-        let i += 1
-    endwhile
-
-    return long_line_lens
-endfunction
-
-"find the median of the given array of numbers
-function! s:Median(nums)
-    let nums = sort(a:nums)
-    let l = len(nums)
-
-    if l % 2 == 1
-        let i = (l-1) / 2
-        return nums[i]
-    else
-        return (nums[l/2] + nums[(l/2)-1]) / 2
-    endif
-endfunction
-
-"indent settings
-set shiftwidth=2
-set softtabstop=2
-set expandtab
-set autoindent
-
-"folding settings
-set foldmethod=indent   "fold based on indent
-set foldnestmax=3       "deepest fold is 3 levels
-set nofoldenable        "dont fold by default
-
-set wildmode=list:longest   "make cmdline tab completion similar to bash
-set wildmenu                "enable ctrl-n and ctrl-p to scroll thru matches
-set wildignore=*.o,*.obj,*~ "stuff to ignore when tab completing
-
-"display tabs and trailing spaces
-"set list
-"set listchars=tab:\ \ ,extends:>,precedes:<
-" disabling list because it interferes with soft wrap
-
-set formatoptions-=o "dont continue comments when pushing o/O
-
-"vertical/horizontal scroll off settings
-set scrolloff=3
-set sidescrolloff=7
-set sidescroll=1
-
-"load ftplugins and indent files
-filetype plugin on
-filetype indent on
-
-"turn on syntax highlighting
-syntax on
-au BufRead,BufNewFile *.hamlc set filetype=haml
-au BufRead,BufNewFile *.eco set filetype=html
-au BufRead,BufNewFile *.cljs set filetype=clojure
-
-au BufNewFile,BufRead *.vtl set ft=velocity
-
-"some stuff to get the mouse going in term
-set mouse=a
-set ttymouse=xterm2
-
-"hide buffers when not displayed
-set hidden
-
-set nobackup
-set nowritebackup
-set noswapfile
-
-set t_Co=256
-set guitablabel=%M%t
-set termguicolors
-
-" vim-airline settings
-let g:airline_powerline_fonts=1
-let g:lightline = { 'colorscheme': 'scheakur' }
-set ttimeoutlen=50
-
-" don't give |ins-completion-menu| messages.
-set shortmess+=c
-
-" always show signcolumns
-set signcolumn=yes
-
-function! s:check_back_space() abort
-  let col = col('.') - 1
-  return !col || getline('.')[col - 1]  =~# '\s'
-endfunction
-nnoremap - :Switch<cr>
-
-inoremap <expr> <cr> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
-
-"make <c-l> clear the highlight as well as redraw
-nnoremap <C-L> :nohls<CR><C-L>
-inoremap <C-L> <C-O>:nohls<CR>
-
-"map Q to something useful
-noremap Q gq
-
-"make Y consistent with C and D
-nnoremap Y y$
-
-"mark syntax errors with :signs
-let g:syntastic_enable_signs=1
-
-"key mapping for vimgrep result navigation
-map <A-o> :copen<CR>
-map <A-q> :cclose<CR>
-map <A-j> :cnext<CR>
-map <A-k> :cprevious<CR>
-
-"visual search mappings
-function! s:VSetSearch()
-    let temp = @@
-    norm! gvy
-    let @/ = '\V' . substitute(escape(@@, '\'), '\n', '\\n', 'g')
-    let @@ = temp
-endfunction
-vnoremap * :<C-u>call <SID>VSetSearch()<CR>//<CR>
-vnoremap # :<C-u>call <SID>VSetSearch()<CR>??<CR>
-
-
-"jump to last cursor position when opening a file
-"dont do it when writing a commit log entry
-autocmd BufReadPost * call SetCursorPosition()
-function! SetCursorPosition()
-    if &filetype !~ 'commit\c'
-        if line("'\"") > 0 && line("'\"") <= line("$")
-            exe "normal! g`\""
-            normal! zz
-        endif
-    end
-endfunction
-
-"define :HighlightLongLines command to highlight the offending parts of
-"lines that are longer than the specified length (defaulting to 80)
-command! -nargs=? HighlightLongLines call s:HighlightLongLines('<args>')
-function! s:HighlightLongLines(width)
-    let targetWidth = a:width != '' ? a:width : 79
-    if targetWidth > 0
-        exec 'match Todo /\%>' . (targetWidth) . 'v/'
-    else
-        echomsg "Usage: HighlightLongLines [natural number]"
-    endif
-endfunction
-
-"key mapping for saving file
-nmap <C-s> :w<CR>
-
-"Key mapping for textmate-like indentation
-nmap <D-[> <<
-nmap <D-]> >>
-vmap <D-[> <gv
-vmap <D-]> >gv
-
-let ScreenShot = {'Icon':0, 'Credits':0, 'force_background':'#FFFFFF'}
-
-augroup vimrcEx
-  " Clear all autocmds in the group
-  autocmd!
-  autocmd FileType text setlocal textwidth=78
-  " Jump to last cursor position unless it's invalid or in an event handler
-  autocmd BufReadPost *
-    \ if line("'\"") > 0 && line("'\"") <= line("$") |
-    \   exe "normal g`\"" |
-    \ endif
-augroup END
-
-" Clear the search buffer when hitting return
-:nnoremap <CR> :nohlsearch<cr>
-
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" OPEN FILES IN DIRECTORY OF CURRENT FILE
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-cnoremap %% <C-R>=expand('%:h').'/'<cr>
-map <leader>e :edit %%
-
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" RENAME CURRENT FILE
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-function! RenameFile()
-    let old_name = expand('%')
-    let new_name = input('New file name: ', expand('%'))
-    if new_name != '' && new_name != old_name
-        exec ':saveas ' . new_name
-        exec ':silent !rm ' . old_name
-        redraw!
-    endif
-endfunction
-map <leader>n :call RenameFile()<cr>
-
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" MAPS TO JUMP TO SPECIFIC COMMAND-T TARGETS AND FILES
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-map <leader>gr :topleft :split config/routes.rb<cr>
-function! ShowRoutes()
-  " Requires 'scratch' plugin
-  :topleft 100 :split __Routes__
-  " Make sure Vim doesn't write __Routes__ as a file
-  :set buftype=nofile
-  " Delete everything
-  :normal 1GdG
-  " Put routes output in buffer
-  :0r! rake -s routes
-  " Size window to number of lines (1 plus rake output length)
-  :exec ":normal " . line("$") . "_ "
-  " Move cursor to bottom
-  :normal 1GG
-  " Delete empty trailing line
-  :normal dd
-endfunction
-map <leader>gR :call ShowRoutes()<cr>
-
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" SWITCH BETWEEN TEST AND PRODUCTION CODE
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-function! OpenTestAlternate()
-  let new_file = AlternateForCurrentFile()
-  exec ':e ' . new_file
-endfunction
-function! AlternateForCurrentFile()
-  let current_file = expand("%")
-  let new_file = current_file
-  let in_spec = match(current_file, '^spec/') != -1
-  let going_to_spec = !in_spec
-  let in_app = match(current_file, '\<controllers\>') != -1 || match(current_file, '\<models\>') != -1 || match(current_file, '\<views\>') != -1 || match(current_file, '\<policies\>') != -1 || match(current_file, '\<services\>') != -1
-  if going_to_spec
-    if in_app
-      let new_file = substitute(new_file, '^app/', '', '')
-    end
-    let new_file = substitute(new_file, '\.rb$', '_spec.rb', '')
-    let new_file = 'spec/' . new_file
-  else
-    let new_file = substitute(new_file, '_spec\.rb$', '.rb', '')
-    let new_file = substitute(new_file, '^spec/', '', '')
-    if in_app
-      let new_file = 'app/' . new_file
-    end
-  endif
-  return new_file
-endfunction
-nnoremap <leader>. :call OpenTestAlternate()<cr>
-
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" RUNNING TESTS
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-function! RunTests(filename)
-    " Write the file and run tests for the given filename
-    :w
-    :silent !echo;echo;echo;echo;echo;echo;echo;echo;echo;echo
-    :silent !echo;echo;echo;echo;echo;echo;echo;echo;echo;echo
-    :silent !echo;echo;echo;echo;echo;echo;echo;echo;echo;echo
-    :silent !echo;echo;echo;echo;echo;echo;echo;echo;echo;echo
-    :silent !echo;echo;echo;echo;echo;echo;echo;echo;echo;echo
-    :silent !echo;echo;echo;echo;echo;echo;echo;echo;echo;echo
-    if match(a:filename, '\.feature$') != -1
-        exec ":!script/features " . a:filename
-    else
-        if filereadable("script/test")
-            exec ":!script/test " . a:filename
-        else
-            exec ":!rspec --color " . a:filename
-        end
-    end
-endfunction
-
-function! SetTestFile()
-    " Set the spec file that tests will be run for.
-    let t:grb_test_file=@%
-endfunction
-
-function! RunTestFile(...)
-    if a:0
-        let command_suffix = a:1
-    else
-        let command_suffix = ""
-    endif
-
-    " Run the tests for the previously-marked file.
-    let in_test_file = match(expand("%"), '\(.feature\|_spec.rb\)$') != -1
-    if in_test_file
-        call SetTestFile()
-    elseif !exists("t:grb_test_file")
-        return
-    end
-    call RunTests(t:grb_test_file . command_suffix)
-endfunction
-
-function! RunNearestTest()
-    let spec_line_number = line('.')
-    call RunTestFile(":" . spec_line_number . " -b")
-endfunction
-
-map <leader>z :call RunNearestTest()<cr>
-map <leader>G :call RunTests('')<cr>
-
-map <leader>Z :w\|:!ruby %<cr>
-map <leader>i :w\|:!mix test %<cr>
-
-let $XIKI_DIR = "/Users/pro/.rvm/gems/ruby-1.9.3-p194/gems/xiki-0.6.3/"
-
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Tabularize
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-map <Leader>q :Tabularize /
-
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Custom
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-nmap j gj
-nmap k gk
-nmap <C-e> :e#<CR>
-nmap <C-n> :bnext<CR>
-nnoremap <C-p> :GitFiles<CR>
-nnoremap <C-b> :Buffers<CR>
-nnoremap <leader>l :Lines<CR>
-
-nmap <leader>f :Ag <C-R><C-W><CR>
 nmap <leader>d :DockerToolsToggle<CR>
 
 let g:gitgutter_enabled = 1
@@ -422,22 +96,14 @@ nmap <silent> <c-h> :TmuxNavigateLeft<cr>
 nmap <silent> <c-j> :TmuxNavigateDown<cr>
 nmap <silent> <c-k> :TmuxNavigateUp<cr>
 nmap <silent> <c-l> :TmuxNavigateRight<cr>
-nmap <silent> <c-\> :TmuxNavigatePrevious<cr>
-
-map <leader>c :PBCopy<cr>
-map <leader>v :PBPaste<cr>
+"nmap <silent> <c-\> :TmuxNavigatePrevious<cr>
 
 map <leader>t :NERDTreeToggle<CR>
 
 " Ubuntu:
-" set clipboard=unnamedplus
+set clipboard=unnamedplus
 " Mac:
-set clipboard+=unnamed
-
-" Easymotion
-map  / <Plug>(easymotion-sn)
-omap / <Plug>(easymotion-tn)
-nmap t <Plug>(easymotion-t2)
+" set clipboard+=unnamed
 
 let g:jsx_ext_required = 0
 let g:syntastic_always_populate_loc_list = 1
@@ -472,37 +138,212 @@ augroup FiletypeGroup
 augroup END
 " prettier
 " "autocmd FileType javascript set formatprg=prettier\ --stdin
-let g:prettier#autoformat = 1
+let g:prettier#autoformat = 0
 autocmd BufWritePre *.js,*.jsx,*.mjs,*.ts,*.tsx,*.css,*.less,*.scss,*.json,*.graphql,*.md PrettierAsync
-let g:prettier#config#tab_width = 2
-let g:prettier#config#eslintIntegration = 'true'
 
 call plug#begin('~/.vim/plugged')
 Plug 'scrooloose/nerdtree', { 'on':  'NERDTreeToggle' }
 
-Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
-Plug 'junegunn/fzf.vim'
 Plug 'kevinhui/vim-docker-tools'
 Plug 'mhinz/vim-mix-format'
+Plug 'tmux-plugins/vim-tmux-focus-events'
+Plug 'roxma/vim-tmux-clipboard'
+Plug 'machakann/vim-highlightedyank'
+Plug 'sodapopcan/vim-twiggy'
+
+" Typescript syntax
+Plug 'jparise/vim-graphql'        " GraphQL syntax
+Plug 'rafi/awesome-vim-colorschemes'
+
+" neovim 0.5 goodies, see https://github.com/ray-x/navigator.lua
+Plug 'neovim/nvim-lspconfig'
+Plug 'ray-x/guihua.lua', {'do': 'cd lua/fzy && make' }
+Plug 'ray-x/navigator.lua'
+Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
+Plug 'ray-x/lsp_signature.nvim'
+Plug 'nvim-lua/popup.nvim'
+Plug 'nvim-lua/plenary.nvim'
+Plug 'nvim-telescope/telescope.nvim'
+Plug 'nvim-telescope/telescope-fzy-native.nvim'
+
+Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
+Plug 'junegunn/fzf.vim'
 call plug#end()
 
-" Mapping selecting mappings
-nmap <leader><tab> <plug>(fzf-maps-n)
-xmap <leader><tab> <plug>(fzf-maps-x)
-omap <leader><tab> <plug>(fzf-maps-o)
+lua <<EOF
+  require'navigator'.setup()
 
-" Insert mode completion
-imap <c-x><c-k> <plug>(fzf-complete-word)
-imap <c-x><c-f> <plug>(fzf-complete-path)
-imap <c-x><c-j> <plug>(fzf-complete-file-ag)
-imap <c-x><c-l> <plug>(fzf-complete-line)
+  require'nvim-treesitter.configs'.setup {
+    ensure_installed = "maintained",
+    highlight = {
+      enable = true
+    },
+    incremental_selection = {
+      enable = true,
+      keymaps = {
+        init_selection = "gnn",
+        node_incremental = "grn",
+        scope_incremental = "grc",
+        node_decremental = "grm",
+      },
+    },
+  }
 
-" Advanced customization using autoload functions
-inoremap <expr> <c-x><c-k> fzf#vim#complete#word({'left': '15%'}})"
+  local nvim_lsp = require("lspconfig")
+  local lsp_signature = require('lsp_signature')
+
+  local format_async = function(err, _, result, _, bufnr)
+      if err ~= nil or result == nil then return end
+      if not vim.api.nvim_buf_get_option(bufnr, "modified") then
+          local view = vim.fn.winsaveview()
+          vim.lsp.util.apply_text_edits(result, bufnr)
+          vim.fn.winrestview(view)
+          if bufnr == vim.api.nvim_get_current_buf() then
+              vim.api.nvim_command("noautocmd :update")
+          end
+      end
+  end
+
+  vim.lsp.handlers["textDocument/formatting"] = format_async
+  _G.lsp_organize_imports = function()
+      local params = {
+          command = "_typescript.organizeImports",
+          arguments = {vim.api.nvim_buf_get_name(0)},
+          title = ""
+      }
+      vim.lsp.buf.execute_command(params)
+  end
+
+  local on_attach = function(client, bufnr)
+
+  local buf_map = vim.api.nvim_buf_set_keymap
+  vim.cmd("command! LspDef lua vim.lsp.buf.definition()")
+  vim.cmd("command! LspFormatting lua vim.lsp.buf.formatting()")
+  vim.cmd("command! LspCodeAction lua vim.lsp.buf.code_action()")
+  vim.cmd("command! LspHover lua vim.lsp.buf.hover()")
+  vim.cmd("command! LspRename lua vim.lsp.buf.rename()")
+  vim.cmd("command! LspOrganize lua lsp_organize_imports()")
+  vim.cmd("command! LspRefs lua vim.lsp.buf.references()")
+  vim.cmd("command! LspTypeDef lua vim.lsp.buf.type_definition()")
+  vim.cmd("command! LspImplementation lua vim.lsp.buf.implementation()")
+  vim.cmd("command! LspDiagPrev lua vim.lsp.diagnostic.goto_prev()")
+  vim.cmd("command! LspDiagNext lua vim.lsp.diagnostic.goto_next()")
+  vim.cmd(
+      "command! LspDiagLine lua vim.lsp.diagnostic.show_line_diagnostics()")
+  vim.cmd("command! LspSignatureHelp lua vim.lsp.buf.signature_help()")
+
+  buf_map(bufnr, "n", "gd", ":LspDef<CR>", {silent = true})
+  buf_map(bufnr, "n", "gr", ":LspRename<CR>", {silent = true})
+  buf_map(bufnr, "n", "gR", ":LspRefs<CR>", {silent = true})
+  buf_map(bufnr, "n", "gy", ":LspTypeDef<CR>", {silent = true})
+  buf_map(bufnr, "n", "K", ":LspHover<CR>", {silent = true})
+  buf_map(bufnr, "n", "gs", ":LspOrganize<CR>", {silent = true})
+  buf_map(bufnr, "n", "[a", ":LspDiagPrev<CR>", {silent = true})
+  buf_map(bufnr, "n", "]a", ":LspDiagNext<CR>", {silent = true})
+  buf_map(bufnr, "n", "ga", ":LspCodeAction<CR>", {silent = true})
+  buf_map(bufnr, "n", "<Leader>a", ":LspDiagLine<CR>", {silent = true})
+  buf_map(bufnr, "i", "<C-x><C-x>", "<cmd> LspSignatureHelp<CR>", {silent = true})
+
+  if client.resolved_capabilities.document_formatting then
+          vim.api.nvim_exec([[
+           augroup LspAutocommands
+               autocmd! * <buffer>
+               autocmd BufWritePost <buffer> LspFormatting
+           augroup END
+           ]], true)
+      end
+  end
+
+  nvim_lsp.tsserver.setup {
+      on_attach = function(client)
+          client.resolved_capabilities.document_formatting = false
+          signature_config = {
+            bind = true,
+            doc_lines = 4,
+            handler_opts = {
+              border = "single"
+              }
+            }
+          lsp_signature.on_attach(signature_config)
+          on_attach(client)
+      end
+  }
+  local filetypes = {
+      typescript = "eslint",
+      typescriptreact = "eslint",
+  }
+
+  local linters = {
+      eslint = {
+          sourceName = "eslint",
+          command = "eslint_d",
+          rootPatterns = {".eslintrc.js", "package.json"},
+          debounce = 100,
+          args = {"--stdin", "--stdin-filename", "%filepath", "--format", "json"},
+          parseJson = {
+              errorsRoot = "[0].messages",
+              line = "line",
+              column = "column",
+              endLine = "endLine",
+              endColumn = "endColumn",
+              message = "${message} [${ruleId}]",
+              security = "severity"
+          },
+          securities = {[2] = "error", [1] = "warning"}
+      }
+  }
+
+  local formatters = {
+      prettier = {command = "prettier", args = {"--stdin-filepath", "%filepath"}}
+  }
+
+  local formatFiletypes = {
+      typescript = "prettier",
+      typescriptreact = "prettier"
+  }
+
+  local actions = require('telescope.actions')
+
+  require('telescope').setup{
+    defaults = {
+      sorting_strategy = "ascending",
+      set_env = { ['COLORTERM'] = 'truecolor' },
+      mappings = {
+        i = {
+          ["<C-[>"] = actions.close
+        },
+        n = {
+          ["<C-[>"] = actions.close
+        },
+      },
+    },
+    extensions = {
+      fzy_native = {
+        override_generic_sorter = false,
+        override_file_sorter = true,
+      }
+    }
+  }
+
+  require('telescope').load_extension('fzy_native')
+EOF
+
 set noerrorbells
+
+"indent settings
+set shiftwidth=2
+set softtabstop=2
+set expandtab
+set autoindent
 
 set path=.,src
 set suffixesadd=.js,.jsx,.tsx,.ts,.less,.css
+
+set foldmethod=indent   "fold based on indent
+set foldnestmax=3       "deepest fold is 3 levels
+set nofoldenable        "dont fold by default
+filetype plugin on
+filetype indent on
 
 function! LoadMainNodeModule(fname)
     let nodeModules = "./node_modules/"
@@ -519,34 +360,82 @@ set includeexpr=LoadMainNodeModule(v:fname)
 
 let g:deoplete#enable_at_startup = 1
 
-let b:ale_linters = ['eslint']
-
 " deoplete tab mapping
 function! s:check_back_space() abort "{{{
   let col = col('.') - 1
   return !col || getline('.')[col - 1]  =~ '\s'
 endfunction"}}}
-inoremap <silent><expr> <TAB>
-      \ pumvisible() ? "\<C-n>" :
-      \ <SID>check_back_space() ? "\<TAB>" :
-      \ deoplete#manual_complete()
 
 let g:mix_format_on_save = 1
 
-" Initially set it to "dark" or "light" according to your default
-let s:mybg = "dark"
-set background=light
-colorscheme PaperColor
-function! BgToggleSol()
-    if (s:mybg ==? "light")
-      source ~/.vim/vimrc.night
-       "set background=dark
-       "let s:mybg = "dark"
-    else
-      source ~/.vim/vimrc.day
-       "set background=light
-       "let s:mybg = "light"
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" OPEN FILES IN DIRECTORY OF CURRENT FILE
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+cnoremap %% <C-R>=expand('%:h').'/'<cr>
+map <leader>e :edit %%
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" SWITCH BETWEEN TEST AND PRODUCTION CODE
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+function! OpenTestAlternate()
+  let new_file = AlternateForCurrentFile()
+  exec ':e ' . new_file
+endfunction
+function! AlternateForCurrentFile()
+  let current_file = expand("%")
+  let new_file = current_file
+  let in_spec = match(current_file, '^spec/') != -1
+  let going_to_spec = !in_spec
+  let in_app = match(current_file, '\<controllers\>') != -1 || match(current_file, '\<models\>') != -1 || match(current_file, '\<views\>') != -1 || match(current_file, '\<policies\>') != -1 || match(current_file, '\<services\>') != -1
+  if going_to_spec
+    if in_app
+      let new_file = substitute(new_file, '^app/', '', '')
+    end
+    let new_file = substitute(new_file, '\.rb$', '_spec.rb', '')
+    let new_file = 'spec/' . new_file
+  else
+    let new_file = substitute(new_file, '_spec\.rb$', '.rb', '')
+    let new_file = substitute(new_file, '^spec/', '', '')
+    if in_app
+      let new_file = 'app/' . new_file
+    end
+  endif
+  return new_file
+endfunction
+nnoremap <leader>. :call OpenTestAlternate()<cr>
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" RENAME CURRENT FILE
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+function! RenameFile()
+    let old_name = expand('%')
+    let new_name = input('New file name: ', expand('%'))
+    if new_name != '' && new_name != old_name
+        exec ':saveas ' . new_name
+        exec ':silent !rm ' . old_name
+        redraw!
     endif
 endfunction
+map <leader>n :call RenameFile()<cr>
 
-nnoremap <silent> <leader>b :call BgToggleSol()<cr>
+" vim-airline settings
+let g:airline_powerline_fonts=1
+let g:lightline = { 'colorscheme': 'solarized8' }
+set ttimeoutlen=50
+
+"key mapping for saving file
+nmap <C-s> :w<CR>
+
+" Clear the search buffer when hitting return
+:nnoremap <CR> :nohlsearch<cr>
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" COLORS
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+colorscheme solarized8
+if ($THEME ==? "light")
+  set background=light
+else
+  colorscheme atom
+  set background=dark
+endif
